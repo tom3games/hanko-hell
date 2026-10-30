@@ -73,7 +73,7 @@ renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1))
 renderer.outputColorSpace = THREE.SRGBColorSpace
 const scene = new THREE.Scene()
 scene.background = new THREE.Color('#3b4a63')
-scene.fog = new THREE.Fog('#3b4a63', 22, 48)
+scene.fog = new THREE.Fog('#3b4a63', 34, 70)
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120)
 scene.add(new THREE.HemisphereLight('#fff4e2', '#4a5466', 1.25))
 const sun = new THREE.DirectionalLight('#ffd9a8', 1.7); sun.position.set(-5, 9, 4); scene.add(sun)
@@ -281,19 +281,22 @@ const REST_Y = 1.35
   hk.add(mesh(G.sph, skin, 0.08, 0.07, 0.13, 0.05, 0.72, -0.2))
   hand.g.add(hk)
   const cuff = mesh(G.cyl, LAMB('#22324a'), 0.23, 0.22, 0.23, 0, 0, 0); hand.cuff = cuff; hand.g.add(cuff)
-  const arm = mesh(new THREE.CylinderGeometry(1.9, 1, 1, 16), LAMB('#e8f0fa'), 0.2, 1, 0.2, 0, 0, 0); hand.arm = arm; hand.g.add(arm)
+  const arm = mesh(new THREE.CylinderGeometry(1.15, 1, 1, 16), LAMB('#e8f0fa'), 0.2, 1, 0.2, 0, 0, 0); hand.arm = arm; hand.g.add(arm)
+  const armEnd = mesh(G.sph, LAMB('#e8f0fa'), 0.23, 0.23, 0.23, 0, 0, 0); hand.armEnd = armEnd; hand.g.add(armEnd)
   const fore = mesh(G.cyl, skin, 0.17, 1, 0.17, 0, 0, 0); hand.fore = fore; hand.g.add(fore)
   scene.add(hand.g)
   hand.blob = new THREE.Mesh(new THREE.CircleGeometry(0.3, 20), shadowMat.clone()); hand.blob.rotation.x = -Math.PI / 2; hand.blob.position.set(STX, BELT_Y + 0.02, BOX_Z); scene.add(hand.blob)
 }
-const SHOULDER = new THREE.Vector3(3.0, 7.5, 11.0), _v = new THREE.Vector3(), _q = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0)
+const ARM_DIR = new THREE.Vector3(0.55, 1, 0.12).normalize(), ARM_LEN = 0.95, _v = new THREE.Vector3(), _q = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0)
 function placeHand() {
   const hk = hand.hk; hk.position.set(STX, hand.y, BOX_Z); hk.scale.set(1 + hand.sq * 0.12, 1 - hand.sq * 0.12, 1 + hand.sq * 0.12)
   const wrist = _v.set(STX + 0.36, hand.y + 0.6, BOX_Z + 0.08)
-  const dir = SHOULDER.clone().sub(wrist), len = dir.length(); dir.normalize()
-  const fl = Math.min(0.9, len * 0.3); _q.setFromUnitVectors(UP, dir)
+  // 腕は手首から先だけ。ハンコの真上から右上へ短く逃がし、ベルトの書類と赤い線をふさがない
+  const dir = ARM_DIR, len = ARM_LEN
+  const fl = 0.35; _q.setFromUnitVectors(UP, dir)
   hand.fore.position.copy(wrist).addScaledVector(dir, fl / 2); hand.fore.scale.set(0.15, fl, 0.15); hand.fore.quaternion.copy(_q)
   hand.arm.position.copy(wrist).addScaledVector(dir, fl + (len - fl) / 2); hand.arm.scale.set(0.2, len - fl, 0.2); hand.arm.quaternion.copy(_q)
+  hand.armEnd.position.copy(wrist).addScaledVector(dir, len)
   hand.cuff.position.copy(wrist).addScaledVector(dir, fl); hand.cuff.scale.set(0.215, 0.1, 0.215); hand.cuff.quaternion.copy(_q)
   const h = clamp((hand.y - hand.contact) / 1.3, 0, 1); hand.blob.scale.setScalar(0.6 + h * 0.6); hand.blob.material.opacity = 0.35 - h * 0.2; hand.blob.position.y = hand.contact + 0.006
 }

@@ -100,7 +100,7 @@ kbd{font-family:inherit;font-weight:900;font-size:.9em;background:var(--paper);c
 .hclock i{position:absolute;left:0;bottom:0;height:4px;background:var(--red);width:100%}
 .hscore{flex:0 1 150px}
 .hdone{flex:none}
-#combo{position:absolute;left:0;top:calc(100% + 8px);font-family:var(--disp);font-size:17px;color:var(--ink);background:var(--gold);padding:2px 14px 4px;border-radius:99px;box-shadow:0 3px 0 var(--gold-dk);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
+#combo{position:absolute;left:0;transform-origin:left center;top:calc(100% + 8px);font-family:var(--disp);font-size:17px;color:var(--ink);background:var(--gold);padding:2px 14px 4px;border-radius:99px;box-shadow:0 3px 0 var(--gold-dk);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
 #combo.on{opacity:1}
 #combo.bump{animation:cpop .25s ease-out}
 @keyframes cpop{from{transform:scale(1.5)}to{transform:scale(1)}}
