@@ -722,6 +722,13 @@ async function saveImage() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hanko-hell.png'; document.body.appendChild(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast(T('saved')); return 'download'
 }
+const PUBLIC_URL = 'https://tom3games.github.io/hanko-hell/'
+function xPost() {
+  const R = S.result, g = GRADES[R.gi], ja = S.lang === 'ja'
+  const text = T('xText').replace('{d}', R.done).replace('{s}', R.score).replace('{g}', ja ? g.ja : g.en).replace('{n}', ja ? g.nja : g.nen)
+  return { text, url: PUBLIC_URL, href: `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(PUBLIC_URL)}` }
+}
+function openX() { if (!S.result) return; window.open(xPost().href, '_blank', 'noopener') }
 function toast(s) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = s; document.body.appendChild(d); setTimeout(() => d.remove(), 1600) }
 
 // ---------- カメラ（どの画面の形でも机・課長・山が収まる距離を探す）
@@ -767,6 +774,7 @@ async function boot() {
   on('#bHowBack', () => { Snd.sfx('tap'); go('title') })
   on('#bAgain', () => { Snd.sfx('tap'); startGame() })
   on('#bSave', () => saveImage())
+  on('#bX', () => { Snd.sfx('tap'); openX() })
   on('#bTitle', () => { Snd.sfx('tap'); go('title') })
   on('#bLang', () => { S.lang = S.lang === 'ja' ? 'en' : 'ja'; try { localStorage.setItem('hh.lang', S.lang) } catch (e) {} applyLang() })
   on('#bMute', () => { Snd.setMute(!Snd.muted); $('#icOn').hidden = Snd.muted; $('#icOff').hidden = !Snd.muted; try { localStorage.setItem('hh.mute', Snd.muted ? '1' : '0') } catch (e) {} })
@@ -790,7 +798,7 @@ photoTex = canvasTex(256, 330, (x, w, h) => { x.fillStyle = '#cfe3f0'; x.fillRec
 
 // 検証用の窓口
 window.hh = {
-  S, press, startGame, showResult, drawCard, saveImage, go, fitCamera, makeResult, GRADES, NG, Snd, toScreen, boss, hand,
+  S, press, startGame, showResult, drawCard, saveImage, xPost, openX, go, fitCamera, makeResult, GRADES, NG, Snd, toScreen, boss, hand,
   setLang: l => { S.lang = l; applyLang() },
   dbg: {
     pause: v => { paused = v; acc = 0; lastT = performance.now() },

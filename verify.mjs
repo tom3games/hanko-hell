@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import { mkdirSync, statSync } from 'node:fs'
 const ROOT = import.meta.dirname
 mkdirSync(ROOT + '/shots', { recursive: true })
-const PORT = 5390
+const PORT = +process.env.PORT || 5591
 const server = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT) } })
 await new Promise(r => setTimeout(r, 400))
 const URL0 = `http://localhost:${PORT}/`
@@ -54,6 +54,30 @@ const variance3d = p => p.evaluate(() => {
   const x = c.getContext('2d'); x.drawImage(src, 0, 0, c.width, c.height); const d = x.getImageData(0, 0, c.width, c.height).data
   let s = 0, s2 = 0, n = 0; for (let i = 0; i < d.length; i += 4 * 3) { const v = d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11; s += v; s2 += v * v; n++ }
   return Math.round(s2 / n - (s / n) ** 2)
+})
+// Xでポスト: window.open を差し替えて、開かれるURLを取る
+const xCheck = async (p, ns, want, tag, pub) => {
+  await p.evaluate(() => { window.__opened = []; window.open = (...a) => { window.__opened.push(a); return null } })
+  const vis = await p.isVisible('#bX'); expect(vis, 'Xボタンが見えない')
+  await p.click('#bX')
+  const r = await p.evaluate(ns => ({ o: window.__opened, api: window[ns].xPost(), label: document.querySelector('#bX').textContent.trim(), bg: getComputedStyle(document.querySelector('#bX')).backgroundColor, svg: !!document.querySelector('#bX svg path') }), ns)
+  expect(r.o.length === 1, 'open回数 ' + r.o.length)
+  const [href, target, feat] = r.o[0], u = new URL(href), text = u.searchParams.get('text')
+  expect(href.startsWith('https://x.com/intent/post?') && target === '_blank' && /noopener/.test(feat), href + ' ' + target + ' ' + feat)
+  expect(u.searchParams.get('url') === pub && !/https?:/.test(text), 'url ' + href)
+  expect(text.includes(tag) && want.every(w => text.includes(String(w))), 'text ' + text + ' want ' + want.join(','))
+  expect(text === r.api.text && r.svg && r.bg === 'rgb(0, 0, 0)', JSON.stringify(r))
+  return { label: r.label, text }
+}
+// 保存・Xボタンの文字が1行に収まっている（折り返しなし）
+const oneLine = p => p.evaluate(() => {
+  const bad = []
+  for (const id of ['#bSave', '#bX']) { const b = document.querySelector(id); if (!b) { bad.push(id + ':none'); continue }
+    const sp = [...b.querySelectorAll('span')].pop() || b, rg = document.createRange(); rg.selectNodeContents(sp)
+    const tops = new Set([...rg.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top)))
+    const br = b.getBoundingClientRect(), sr = sp.getBoundingClientRect()
+    if (tops.size > 1 || sr.left < br.left - 1 || sr.right > br.right + 1) bad.push(id + ':' + tops.size + 'lines') }
+  return bad
 })
 const SIZES = [[360, 640, 'small'], [390, 844, 'phone'], [844, 390, 'land'], [667, 375, 'land-se'], [768, 1024, 'tab'], [1440, 900, 'pc']]
 // 1回分を台本どおりに進める（時間は止めて手で進める）
@@ -176,6 +200,10 @@ await t('画像を保存でダウンロードされる（PC）', async () => {
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#bSave')])
   const path = ROOT + '/shots/card-ja.png'; await dl.saveAs(path); expect(dl.suggestedFilename() === 'hanko-hell.png' && statSync(path).size > 50000, dl.suggestedFilename()); return Math.round(statSync(path).size / 1024) + 'KB'
 })
+await t('Xでポスト: 押すと結果入りの x.com/intent/post が新しいタブで開く', async () => {
+  const w = await p.evaluate(() => { const R = hh.S.result, g = hh.GRADES[R.gi]; return [g.ja, g.nja, R.done + '件', R.score + '点'] })
+  const r = await xCheck(p, 'hh', w, '#稟議書ハンコ地獄', 'https://tom3games.github.io/hanko-hell/'); expect(r.label === 'Xでポスト', r.label); return r
+})
 // 事故だらけの結果
 await t('事故だらけ: 押してしまった物の一覧と課長のコメント', async () => {
   const r = await p.evaluate(async () => { hh.dbg.pause(true); hh.dbg.quiet(true); hh.startGame(77); hh.dbg.autoplay('chaos'); hh.dbg.step(60 * 80); hh.dbg.autoplay(null); hh.dbg.quiet(false); hh.dbg.pause(false); return { ng: hh.S.result.ngTotal, ids: hh.S.result.ngOrder, cm: hh.S.result.cm } })
@@ -216,6 +244,10 @@ await t('英語: タイトル・遊び方・結果が英語になる', async () 
 })
 await p.screenshot({ path: ROOT + '/shots/07-result-en.png' })
 { const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#bSave')]); await dl.saveAs(ROOT + '/shots/card-en.png') }
+await t('英語: Post on X も英語の結果とハッシュタグで開く', async () => {
+  const w = await p.evaluate(() => { const R = hh.S.result, g = hh.GRADES[R.gi]; return [g.en, g.nen, R.done, R.score] })
+  const r = await xCheck(p, 'hh', w, '#StampHell', 'https://tom3games.github.io/hanko-hell/'); expect(r.label === 'Post on X', r.label); return r
+})
 await t('英語の結果画面ではみ出しなし', async () => { const o = await overflow(p), f = await fit(p); expect(o.sw <= o.W && !o.bad.length && !f.over.length, JSON.stringify([o, f])) })
 await t('通しでエラーなし（Chromium）', async () => { expect(p.errs.length === 0, p.errs.join('|')) })
 await p.close()
@@ -233,8 +265,10 @@ await t('終わればチュートリアル済みになる', async () => { const 
 await p.close()
 
 // ---------- 6サイズ × 全画面
-for (const [w, h, name] of SIZES) {
+for (const [w, h, name0, en] of [...SIZES, [360, 640, 'small', 1], [667, 375, 'land-se', 1]]) {
+  const name = name0 + (en ? '-en' : '')
   const q = await open(browser, { viewport: { width: w, height: h } })
+  if (en) { await q.click('#bLang'); await q.waitForTimeout(100) }
   const views = {}
   await q.waitForTimeout(300)
   views.title = await fit(q); await q.screenshot({ path: `${ROOT}/shots/fit-${name}-title.png` })
@@ -245,6 +279,7 @@ for (const [w, h, name] of SIZES) {
   await t(`${name}: プレイ中の3Dが描けている`, async () => { const v = await variance3d(q); expect(v > 300, v); return v })
   await q.evaluate(() => { hh.dbg.quiet(true); hh.dbg.autoplay('bow'); hh.dbg.step(60 * 40 + 160); hh.dbg.autoplay(null); hh.dbg.pause(false) }); await q.waitForTimeout(2700)
   views.result = await fit(q); await q.screenshot({ path: `${ROOT}/shots/fit-${name}-result.png` })
+  const ol = await oneLine(q); await t(`${name}: 保存・Xボタンの文字が1行`, async () => { expect(!ol.length, ol.join(',')) })
   for (const [v, r] of Object.entries(views)) await t(`一画面に収まる ${name} ${w}x${h} ${v}`, async () => { expect(!r.over.length, JSON.stringify(r)) })
   await t(`${name}: はみ出し・エラーなし`, async () => { const o = await overflow(q); expect(o.sw <= o.W && !o.bad.length && !q.errs.length, JSON.stringify(o) + q.errs.join('|')) })
   await q.close()
