@@ -86,9 +86,9 @@ await t('読み込みが軽い（転送量 3MB 以内）', async () => { const k
 
 // ---------- 遊び方
 await p.click('#bHow')
-await t('遊び方: PC 向けの言い方で4項目・押してはいけない物6種', async () => {
+await t('遊び方: PC 向けの言い方で4項目・押してはいけない物8種', async () => {
   const r = await p.evaluate(() => ({ n: document.querySelectorAll('#howList li').length, pc: document.querySelector('#howList').textContent.includes('スペース'), ng: document.querySelectorAll('#ngList .ic svg').length }))
-  expect(r.n === 4 && r.pc && r.ng === 6, JSON.stringify(r)); return r
+  expect(r.n === 4 && r.pc && r.ng === 8, JSON.stringify(r)); return r
 })
 await p.screenshot({ path: ROOT + '/shots/02-how.png' })
 await p.click('#bHowBack')
@@ -99,13 +99,13 @@ await t('カウントダウンのあと始業（mode=play）・時間は固定60
 await t('判定の境目（まっすぐ/お辞儀/ふんぞり/はみ出し/空押し）', async () => {
   const r = await p.evaluate(() => {
     const out = {}
-    for (const [name, e] of [['straight', 0.0], ['straight2', 0.06], ['bow', 0.08], ['bow2', 0.23], ['fun', -0.08], ['fun2', -0.23], ['off', 0.3], ['off2', -0.3], ['offLate', 1.2], ['air', -0.5], ['air2', 1.4]]) {
+    for (const [name, e] of [['straight', 0.0], ['straight2', 0.05], ['bow', 0.07], ['bow2', 0.16], ['fun', -0.07], ['fun2', -0.16], ['off', 0.2], ['off2', -0.2], ['offLate', 1.2], ['air', -0.5], ['air2', 1.4]]) {
       hh.S.hit = 0; hh.hand.ph = -1; hh.S.combo = 0; hh.dbg.place('doc', -0.48 + e); const s0 = hh.S.score; out[name] = [hh.press(), hh.S.score - s0]
     }
     return out
   })
   const ok = r.straight[0] === 'straight' && r.straight2[0] === 'straight' && r.bow[0] === 'bow' && r.bow2[0] === 'bow' && r.fun[0] === 'fun' && r.fun2[0] === 'fun' && r.off[0] === 'off' && r.off2[0] === 'off' && r.offLate[0] === 'off' && r.air[0] === 'air' && r.air2[0] === 'air'
-  const pts = r.straight[1] === 100 && r.bow[1] === 150 && r.fun[1] === 50 && r.off[1] === 20 && r.air[1] === -10
+  const pts = r.straight[1] === 100 && r.bow[1] === 150 && r.fun[1] === -30 && r.off[1] === -20 && r.air[1] === -50
   expect(ok && pts, JSON.stringify(r)); return r
 })
 await t('連続ボーナス（まっすぐ10連続 = 100x4 + 150x5 + 200 = 1350）', async () => {
@@ -113,16 +113,16 @@ await t('連続ボーナス（まっすぐ10連続 = 100x4 + 150x5 + 200 = 1350�
   expect(d[0] === 1350 && d[1] === 10, d); return d
 })
 await t('押せない間（ハンコが上がる途中）は連打を受け付けない', async () => { const r = await p.evaluate(() => { hh.S.hit = 0; hh.hand.ph = -1; hh.dbg.place('doc', -0.48); const a = hh.press(); const b = hh.press(); hh.dbg.step(10); const c = hh.press(); return [a, b, c] }); expect(r[0] === 'straight' && r[1] === 'busy' && r[2] !== 'busy', r); return r })
-for (const n of ['cat', 'photo', 'lottery', 'resign', 'love', 'cake']) {
-  await t(`押してはいけない物: ${n} → 事故（-300・バナー・課長の吹き出し・時間が止まる）`, async () => {
+for (const n of ['cat', 'photo', 'lottery', 'resign', 'love', 'cake', 'trapPhoto', 'trapLottery']) {
+  await t(`押してはいけない物: ${n} → 事故（-400・バナー・課長の吹き出し・時間が止まる）`, async () => {
     const r = await p.evaluate(n => {
       hh.S.hit = 0; hh.hand.ph = -1; hh.dbg.place(n, 0); const s0 = hh.S.score, t0 = hh.S.t, c0 = hh.S.ng[n] || 0
       const j = hh.press(); const d = hh.S.score - s0; hh.dbg.step(30); const t1 = hh.S.t
       return { j, d, cnt: (hh.S.ng[n] || 0) - c0, banner: !document.querySelector('#banner').hidden && document.querySelector('#bn1').textContent, say: !!document.querySelector('.say'), frozen: t1 === t0 }
     }, n)
-    expect(r.j === 'ng:' + n && r.d === -300 && r.cnt === 1 && r.banner && r.say && r.frozen, JSON.stringify(r)); return r.banner
+    expect(r.j === 'ng:' + n && r.d === -400 && r.cnt === 1 && r.banner && r.say && r.frozen, JSON.stringify(r)); return r.banner
   })
-  if (n === 'cat' || n === 'cake') { await p.evaluate(() => { hh.dbg.step(6); hh.dbg.render() }); await p.screenshot({ path: `${ROOT}/shots/03-accident-${n}.png` }) }
+  if (n === 'cat' || n === 'cake' || n === 'trapPhoto') { await p.evaluate(() => { hh.dbg.step(6); hh.dbg.render() }); await p.screenshot({ path: `${ROOT}/shots/03-accident-${n}.png` }) }
 }
 await t('押してはいけない物を見送るとスルー（+30）', async () => { const r = await p.evaluate(() => { hh.S.hit = 0; hh.dbg.place('love', -1.2); const s0 = hh.S.score; hh.dbg.step(120); return hh.S.score - s0 }); expect(r === 30, r); return r })
 await t('書類を流すと未決裁の山が増え、7枚で崩れる（-150）', async () => {
@@ -139,8 +139,8 @@ await t('空振りでも書類にも当たらない所は空押し扱い', async
 // ---------- 通しで遊ぶ（台本）
 await t('通し: お辞儀狙いの名人が一番高く、何もしないと十級', async () => {
   const bow = await runBot(p, 'bow', 7), st = await runBot(p, 'straight', 7), fun = await runBot(p, 'fun', 7), idle = await runBot(p, 'idle', 7), mash = await runBot(p, 'mash', 7)
-  expect(bow.score > st.score && st.score > fun.score && fun.score > idle.score && idle.score > -2000, JSON.stringify({ bow, st, fun, idle }))
-  expect(bow.missed === 0 && bow.ng === 0 && bow.gi >= 10, 'bow ' + JSON.stringify(bow))
+  expect(bow.score > st.score && st.score > fun.score && idle.score > -2500, JSON.stringify({ bow, st, fun, idle }))
+  expect(bow.missed === 0 && bow.ng === 0 && bow.gi >= 10 && st.gi < 9 && fun.score < 0 && mash.score < -5000, 'bow ' + JSON.stringify({ bow, st, fun, mash }))
   expect(idle.done === 0 && idle.grade === '十級' && idle.col >= 3 && idle.cm.includes('寝てた'), 'idle ' + JSON.stringify(idle))
   expect(mash.ng >= 2 && mash.score < fun.score, 'mash ' + JSON.stringify(mash))
   return { bow: bow.score + ' ' + bow.grade, straight: st.score + ' ' + st.grade, fun: fun.score + ' ' + fun.grade, mash: mash.score + ' ' + mash.grade, idle: idle.score + ' ' + idle.grade }
@@ -151,9 +151,9 @@ await t('同じ種なら同じ結果（再現性）・種が違えば書類の�
   const seqA = await p.evaluate(() => { hh.startGame(1); return hh.dbg.items().map(i => i.kind).join() }), seqB = await p.evaluate(() => { hh.startGame(2); return hh.dbg.items().map(i => i.kind).join() })
   return { a: a.score, c: c.score, seqDiff: seqA !== seqB }
 })
-await t('書類の数は45秒で28〜38枚・押してはいけない物も混ざる（8種の種で）', async () => {
+await t('書類の数は45秒で34〜50枚・押してはいけない物も多めに混ざる（8種の種で）', async () => {
   const r = await p.evaluate(() => { hh.dbg.quiet(true); const out = []; for (let s = 1; s <= 8; s++) { hh.startGame(s * 31); hh.dbg.autoplay('idle'); let ng = 0, seen = new Set(); for (let k = 0; k < 2900; k++) { hh.dbg.step(1); for (const it of hh.S.items) if (!seen.has(it)) { seen.add(it); if (it.kind !== 'doc') ng++ } } out.push([hh.S.missed, ng]) } hh.dbg.autoplay(null); hh.dbg.quiet(false); return out })
-  expect(r.every(([d, n]) => d >= 28 && d <= 38 && n >= 3), JSON.stringify(r)); return r.map(a => a.join('/')).join(' ')
+  expect(r.every(([d, n]) => d >= 34 && d <= 50 && n >= 6), JSON.stringify(r)); return r.map(a => a.join('/')).join(' ')
 })
 await t('残り10秒で定時ダッシュ（曲と時計が変わる）', async () => {
   const r = await p.evaluate(() => { hh.dbg.quiet(true); hh.startGame(5); hh.dbg.autoplay('bow'); hh.dbg.step(181); while (hh.S.t < 34) hh.dbg.step(1); const a = hh.S.rush; while (hh.S.t < 35.3) hh.dbg.step(1); return [a, hh.S.rush, hh.Snd.want, document.querySelector('#hClock').classList.contains('rush')] })

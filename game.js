@@ -7,7 +7,9 @@ const BELT_Y = 0.16, STX = 0, BOX_Z = -0.62, BOX_DX = 0.48, DOC_W = 1.7, DOC_D =
 const SPAWN_X = -10.5, KILL_X = 10.5
 const PILE = { x: 2.55, z: -2.25 }, PILE_MAX = 6
 const BOSS_IDLE = new THREE.Vector3(-2.1, 0, -4.4), BOSS_PEEK = new THREE.Vector3(-1.25, 0.25, -3.05)
-const PTS = { straight: 100, bow: 150, fun: 50, off: 20, air: -10, ng: -300, collapse: -150, skip: 30 }
+const PTS = { straight: 100, bow: 150, fun: -30, off: -20, air: -50, ng: -400, collapse: -200, skip: 30 }
+const WIN = { straight: 0.06, bow: 0.17 }
+const TRAPS = ['trapPhoto', 'trapLottery']
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296 } }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
@@ -59,6 +61,8 @@ const ICONS = {
   lottery: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M5 18h54v8a6 6 0 0 0 0 12v8H5v-8a6 6 0 0 0 0-12z" fill="#ffd6e0" stroke="#d6336c" stroke-width="2"/><path d="M32 22l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6-4.5-4 6-1z" fill="#f2c14e" stroke="#a07b1c" stroke-width="1.2"/><path d="M12 24v16M52 24v16" stroke="#d6336c" stroke-width="1.5" stroke-dasharray="2 2"/></svg>',
   resign: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="17" y="5" width="30" height="54" rx="2" fill="#fff" stroke="#9aa0a8" stroke-width="2"/><path d="M32 13v28" stroke="#1e1a17" stroke-width="4" stroke-linecap="round"/><path d="M26 17h12M27 25h10M26 33h12" stroke="#1e1a17" stroke-width="2.4" stroke-linecap="round"/><circle cx="32" cy="50" r="4" fill="none" stroke="#d6332b" stroke-width="2"/></svg>',
   love: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="6" y="14" width="52" height="36" rx="3" fill="#ffc3d6" stroke="#e05a8a" stroke-width="2"/><path d="M6 16l26 20 26-20" fill="none" stroke="#e05a8a" stroke-width="2"/><path d="M32 46s-10-6-10-12a5 5 0 0 1 10-2a5 5 0 0 1 10 2c0 6-10 12-10 12z" fill="#e5304f"/></svg>',
+  trapPhoto: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="12" y="4" width="40" height="56" fill="#fbf6ea" stroke="#9a8f80" stroke-width="2"/><path d="M18 30h28M18 37h28M18 44h20" stroke="#c8bca6" stroke-width="2"/><rect x="34" y="8" width="15" height="17" fill="#cfe3f0" stroke="#8a5a2b" stroke-width="1.5"/><circle cx="41.5" cy="16" r="5" fill="#f2c9a5"/><path d="M38 15h3M42 15h3" stroke="#1e1a17" stroke-width="1.2"/><path d="M38.5 19q3 2 6 0" stroke="#3a342e" stroke-width="1.5" fill="none"/></svg>',
+  trapLottery: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="16" y="4" width="40" height="56" fill="#fbf6ea" stroke="#9a8f80" stroke-width="2"/><path d="M22 14h28M22 21h28M22 28h20" stroke="#c8bca6" stroke-width="2"/><g transform="rotate(-20 20 46)"><rect x="2" y="38" width="34" height="16" fill="#ffd6e0" stroke="#d6336c" stroke-width="2"/><path d="M19 41l2 4 4 .5-3 2.5 1 4-4-2-4 2 1-4-3-2.5 4-.5z" fill="#f2c14e"/></g></svg>',
   cake: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="52" rx="26" ry="6" fill="#e6e6ea"/><path d="M10 30l40-12v28L10 50z" fill="#fff8ee"/><path d="M10 38l40-10v6L10 44z" fill="#ffb3c7"/><path d="M10 30l40-12 4 4-40 12z" fill="#fff"/><circle cx="36" cy="16" r="6" fill="#e5304f"/><path d="M34 10l2 3 3-3" stroke="#3aa04a" stroke-width="2" fill="none"/></svg>',
 }
 const MOODS = ['normal', 'angry', 'happy', 'shock', 'blush', 'cry']
@@ -242,6 +246,8 @@ const BUILD = {
     it.zzz = new THREE.Sprite(new THREE.SpriteMaterial({ map: zzzTex, transparent: true, depthWrite: false })); it.zzz.scale.set(0.55, 0.55, 1); it.zzz.position.set(0.8, 1.05, 0); g.add(it.zzz)
     it.top = 0.68; it.head = head; return g
   },
+  trapPhoto(it) { const g = BUILD.doc(it); const ph = flat(photoTex, 0.4, 0.5, 0.02); ph.position.set(BOX_DX, 0.02, BOX_Z); ph.rotation.z = 0.08; g.add(ph); return g },
+  trapLottery(it) { const g = BUILD.doc(it); const tk = flat(ngTex.lottery, 0.8, 0.4, 0.02); tk.position.set(-0.75, 0.02, 0.5); tk.rotation.z = 0.35; g.add(tk); it.ticket = tk; it.texKey = 'lottery'; it.texMesh = tk; return g },
   photo(it) {
     const g = new THREE.Group(); g.add(mesh(G.box, M.frame, 1.05, 0.08, 1.3, 0, 0.04, 0))
     const p = flat(photoTex, 0.85, 1.1, 0.085); g.add(p); it.top = 0.09; return g
@@ -264,7 +270,7 @@ const sheetMat = new THREE.MeshLambertMaterial({ color: '#fbf6ea', side: THREE.D
 const sheetGeo = new THREE.PlaneGeometry(1.1, 1.45)
 
 function spawnItem(kind, x) {
-  const it = { kind, x, z: kind === 'doc' ? 0 : BOX_Z, hw: kind === 'doc' ? DOC_W / 2 : NG.find(n => n.id === kind).hw, stamped: 0, hit: false, counted: false }
+  const it = { kind, x, z: kind === 'doc' || TRAPS.includes(kind) ? 0 : BOX_Z, hw: kind === 'doc' ? DOC_W / 2 : NG.find(n => n.id === kind).hw, stamped: 0, hit: false, counted: false }
   it.g = BUILD[kind](it); it.g.position.set(x, BELT_Y, it.z); scene.add(it.g); S.items.push(it); return it
 }
 function clearItems() { for (const it of S.items) scene.remove(it.g); S.items = [] }
@@ -395,12 +401,12 @@ let bannerT = 0
 function banner(a, b, rush) { const el = $('#banner'); $('#bn1').textContent = a; $('#bn2').textContent = b || ''; $('#bn2').hidden = !b; el.classList.toggle('rush', !!rush); el.hidden = false; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); bannerT = 80 }
 
 // ---------- 遊び
-function speed() { const k = clamp(S.t / GAME_T, 0, 1); return 1.7 + 2.0 * Math.pow(k, 1.15) + (S.t > RUSH_T ? 0.35 : 0) }
-function nextGap() { const k = clamp(S.t / GAME_T, 0, 1); return 3.0 - 0.75 * k + S.rnd() * 0.7 }
+function speed() { const k = clamp(S.t / GAME_T, 0, 1); return 2.0 + 2.2 * Math.pow(k, 1.1) + (S.t > RUSH_T ? 0.45 : 0) }
+function nextGap() { const k = clamp(S.t / GAME_T, 0, 1); return 2.7 - 0.6 * k + S.rnd() * 0.6 }
 function pickKind() {
   S.spawnN++
   if (S.mode === 'demo') return Math.random() < 0.22 ? NG[Math.floor(Math.random() * NG.length)].id : 'doc'
-  const p = 0.12 + 0.16 * clamp(S.t / GAME_T, 0, 1)
+  const p = 0.2 + 0.18 * clamp(S.t / GAME_T, 0, 1)
   if (S.spawnN <= 3 || S.rnd() >= p || (S.lastNg && S.rnd() < 0.7)) { S.lastNg = false; return 'doc' }
   if (!S.bag.length) { S.bag = NG.map(n => n.id); for (let i = S.bag.length - 1; i > 0; i--) { const j = Math.floor(S.rnd() * (i + 1));[S.bag[i], S.bag[j]] = [S.bag[j], S.bag[i]] } }
   S.lastNg = true; return S.bag.pop()
@@ -441,21 +447,22 @@ function press() {
   if (target.stamped) { addImpression(target.g, rotLocal(target, STX - target.x), target.top + 0.004 + target.stamped * 0.001, BOX_Z, (Math.random() - 0.5) * 0.6); target.stamped++; S.combo = 0; pop(STX, 0.9, BOX_Z, T('j').air, 'bad', PTS.air); S.score += PTS.air; Snd.sfx('air'); hudUpdate(); return 'double' }
   let j, rot
   const a = Math.abs(e)
-  if (a < 0.07) { j = 'straight'; rot = e * 0.6 }
-  else if (e > 0 && e < 0.24) { j = 'bow'; rot = (12 + (e - 0.07) / 0.17 * 14) * Math.PI / 180 }
-  else if (e < 0 && e > -0.24) { j = 'fun'; rot = -(12 + (-e - 0.07) / 0.17 * 14) * Math.PI / 180 }
+  const W0 = WIN.straight, W1 = WIN.bow
+  if (a < W0) { j = 'straight'; rot = e * 0.6 }
+  else if (e > 0 && e < W1) { j = 'bow'; rot = (12 + (e - W0) / (W1 - W0) * 14) * Math.PI / 180 }
+  else if (e < 0 && e > -W1) { j = 'fun'; rot = -(12 + (-e - W0) / (W1 - W0) * 14) * Math.PI / 180 }
   else { j = 'off'; rot = (S.rnd() - 0.5) * 1.2 }
   target.stamped = 1; target.judge = j
   addImpression(target.g, rotLocal(target, STX - target.x), target.top + 0.004, BOX_Z, rot - target.g.rotation.y)
-  if (j === 'straight' || j === 'bow') S.combo++; else if (j === 'off') S.combo = 0
+  if (j === 'straight' || j === 'bow') S.combo++; else S.combo = 0
   S.maxCombo = Math.max(S.maxCombo, S.combo)
   const mult = 1 + Math.min(4, Math.floor(S.combo / 5)) * 0.5
-  const pts = Math.round(PTS[j] * (j === 'off' ? 1 : mult))
+  const pts = Math.round(PTS[j] * (PTS[j] > 0 ? mult : 1))
   S.score += pts; S.done++
   if (j === 'bow') { S.bows++; S.bowRun++; spriteBurst(sparkTex, STX, 0.5, BOX_Z, 6, 0.3, 2.5) } else S.bowRun = 0
   if (j === 'straight') S.straights++
   S.stamps.push({ j, rot, e })
-  pop(STX, 2.3, BOX_Z, T('j')[j], j, '+' + pts + (mult > 1 && j !== 'off' ? ` ×${mult}` : ''))
+  pop(STX, 2.3, BOX_Z, T('j')[j], j, (pts > 0 ? '+' : '') + pts + (mult > 1 && pts > 0 ? ` ×${mult}` : ''))
   Snd.sfx(j)
   if (S.combo > 0 && S.combo % 5 === 0) { Snd.sfx('combo', S.combo / 5); comboPop() }
   if (S.bowRun === 3) bossSay(T('bossBow'), 'happy', false, 80)
@@ -469,14 +476,15 @@ function accident(it) {
   S.ng[it.kind] = (S.ng[it.kind] || 0) + 1; if (!S.ngOrder.includes(it.kind)) S.ngOrder.push(it.kind)
   S.score += PTS.ng; S.combo = 0; S.bowRun = 0; S.hit = 46
   S.stamps.push({ j: 'ng', id: it.kind, rot: (S.rnd() - 0.5) * 0.8 })
-  const imp = addImpression(it.g, STX - it.x, it.top + 0.006, 0, (S.rnd() - 0.5) * 0.8)
+  const imp = addImpression(it.g, STX - it.x, it.top + 0.006, it.z === 0 ? BOX_Z : 0, (S.rnd() - 0.5) * 0.8)
   shake(true); Snd.sfx('accident'); setTimeout(() => Snd.sfx('hii'), 380)
   banner(S.lang === 'ja' ? n.bja : n.ben, S.lang === 'ja' ? n.sja : n.sen)
   bossSay(S.lang === 'ja' ? n.mja : n.men, n.boss, true, 130)
   pop(STX, 1.2, BOX_Z, PTS.ng, 'bad')
   const wx = STX, wy = BELT_Y + it.top, wz = BOX_Z
   if (it.kind === 'cat') { Snd.sfx('meow'); S.items.splice(S.items.indexOf(it), 1); it.g.position.y += 0.1; addFx(it.g, { vx: -1.6, vy: 6.5, vz: 2.2, rx: -4, rz: 7, g: 8, life: 120, floor: -20 }); if (it.zzz) it.zzz.visible = false }
-  if (it.kind === 'photo') Snd.sfx('bossBig')
+  if (it.kind === 'photo' || it.kind === 'trapPhoto') Snd.sfx('bossBig')
+  if (it.kind === 'trapLottery') { Snd.sfx('void'); it.ticket.material = it.ticket.material.clone(); it.ticket.material.map = ngTex.voidT }
   if (it.kind === 'lottery') { Snd.sfx('void'); const v = flat(ngTex.voidT, 1.2, 0.6, 0.03); v.material.transparent = true; it.g.add(v) }
   if (it.kind === 'resign') { Snd.sfx('laugh'); sheetBurst(wx, wy, wz, 3, 2) }
   if (it.kind === 'love') { Snd.sfx('heart'); spriteBurst(heartTex, wx, wy + 0.3, wz, 14, 0.45, 3.5) }
@@ -535,7 +543,7 @@ function update() {
   if (bot && handReady() && S.hit === 0) {
     if (bot === 'mash') { if (S.frame % 11 === 0) press() }
     else if (bot !== 'idle') {
-      const th = { demo: 0.1, bow: 0.12, straight: 0.0, fun: -0.16, late: 0.5 }[bot]
+      const th = { demo: 0.08, bow: 0.08, straight: -0.05, fun: -0.16, late: 0.5 }[bot]
       for (const it of S.items) if (it.kind === 'doc' && !it.stamped) { const e = it.x + BOX_DX - STX; if (e >= th && e < th + 0.2) { press(); break } }
       if (bot === 'chaos') for (const it of S.items) if (it.kind !== 'doc' && !it.hit && Math.abs(it.x - STX) < 0.05) { press(); break }
     }
@@ -548,7 +556,7 @@ function tutUpdate() {
   const el = $('#tut')
   if (S.tutDone || S.t > 14) { el.hidden = true; return }
   el.hidden = false
-  let now = false; for (const it of S.items) if (it.kind === 'doc' && !it.stamped) { const e = it.x + BOX_DX - STX; if (e > -0.12 && e < 0.2) now = true }
+  let now = false; for (const it of S.items) if (it.kind === 'doc' && !it.stamped) { const e = it.x + BOX_DX - STX; if (e > -0.08 && e < 0.12) now = true }
   el.classList.toggle('now', now); $('#tutTxt').textContent = now ? T('tutNow') : (isTouch() ? T('tutSp') : T('tutPc'))
 }
 function endGame() {
