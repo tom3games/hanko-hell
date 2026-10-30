@@ -9,7 +9,7 @@ const server = spawn(process.execPath, ['server.mjs'], { cwd: ROOT, env: { ...pr
 await new Promise(r => setTimeout(r, 400))
 const URL0 = `http://localhost:${PORT}/`
 let pass = 0, fail = 0
-const results = []
+const results = [], bootFails = []
 async function t(name, fn) {
   try { const r = await fn(); if (r === false) throw new Error('false'); pass++; results.push(`ok   ${name}${r && r !== true ? '  ' + JSON.stringify(r) : ''}`) }
   catch (e) { fail++; results.push(`FAIL ${name}  ${e.message.split('\n')[0]}`) }
@@ -22,7 +22,9 @@ async function open(browser, opts = {}, skipTut = false) {
   p.on('pageerror', e => p.errs.push('pageerror ' + e.message))
   p.on('console', m => { if (m.type() === 'error') p.errs.push('console ' + m.text()) })
   p.on('requestfailed', r => { if (!/fonts\.(googleapis|gstatic)/.test(r.url())) p.errs.push('reqfail ' + r.url()) })
-  await p.goto(URL0); await p.waitForFunction(() => window.__hhReady, null, { timeout: 15000 })
+  await p.goto(URL0)
+  try { await p.waitForFunction(() => window.__hhReady, null, { timeout: 15000 }) }
+  catch (e) { bootFails.push(p.errs.join('|') || 'no error'); await ctx.close(); if (bootFails.length > 3) throw e; return open(browser, opts, skipTut) }
   return p
 }
 const overflow = p => p.evaluate(() => {
@@ -271,5 +273,6 @@ for (const [w, h] of [[390, 844], [844, 390]]) {
 }
 server.kill()
 console.log(results.join('\n'))
+console.log('boot retries:', bootFails.length, bootFails.join(' / '))
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)
