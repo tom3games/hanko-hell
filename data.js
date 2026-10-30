@@ -1,0 +1,130 @@
+// 文言・書類・押してはいけない物・級。処理は game.js
+'use strict'
+
+const TXT = {
+  ja: {
+    title: '稟議書ハンコ地獄', titleHtml: '稟議書<b>ハンコ地獄</b>', sub: '定時まで45秒。押して押して押しまくれ。',
+    lead: '定時までに、この書類を全部さばけ。……わしの顔だけは押すなよ。', boss: '課長',
+    start: '始業する', how: '遊び方', back: 'もどる', lang: 'EN',
+    howT: '遊び方',
+    howPc: ['流れてくる書類の<b>赤い枠</b>が、まん中の<b>赤い線</b>に来たら <kbd>クリック</kbd> か <kbd>スペース</kbd> で押す',
+      '線ぴったりで「まっすぐ」。<b>ほんの少し遅め</b>に押すとハンコが左の上司の欄へ傾く<b>「お辞儀ハンコ」</b>で高得点',
+      '早すぎると「ふんぞりハンコ」。押さずに流すと<b>未決裁の山</b>が積もって、崩れる',
+      '書類じゃない物は<b>押すな</b>。押すと大事故'],
+    howSp: ['流れてくる書類の<b>赤い枠</b>が、まん中の<b>赤い線</b>に来たら<b>画面のどこでもタップ</b>して押す',
+      '線ぴったりで「まっすぐ」。<b>ほんの少し遅め</b>に押すとハンコが左の上司の欄へ傾く<b>「お辞儀ハンコ」</b>で高得点',
+      '早すぎると「ふんぞりハンコ」。押さずに流すと<b>未決裁の山</b>が積もって、崩れる',
+      '書類じゃない物は<b>押すな</b>。押すと大事故'],
+    ngT: '押してはいけない物',
+    tutPc: '赤い枠が線に来たら クリック / スペース', tutSp: '赤い枠が線に来たら タップ', tutNow: 'いま！',
+    count: ['3', '2', '1', '始業！'], rush: '定時ダッシュ！', bell: '定時！', rushSub: '残り10秒',
+    hudDone: '決裁', hudScore: '得点', combo: '{n}連続', clockLab: '定時まで',
+    j: { straight: 'まっすぐ', bow: 'お辞儀ハンコ', fun: 'ふんぞりハンコ', off: 'はみ出し', air: '空押し', pass: '未決裁…', skip: 'スルー' },
+    collapse: '書類の山が崩れた！', bossMada: ['まだか！', 'まだかね！？', 'おそい！', '定時までに頼むよ', 'まだか！！'],
+    bossCollapse: 'なにをやっとるんだ！！', bossBow: 'うむ、わかっとるな', bossIdle: '……',
+    resHead: '本日の業務終了', resDone: '今日の決裁数', resScore: '得点', resUnit: '件', resGrade: 'ハンコ職人',
+    resNg: '押してしまった物', resNgNone: 'なし（えらい）', resMore: 'ほか{n}件', resBows: 'お辞儀', resMax: '最大連続', resPile: '崩した山',
+    again: 'もう一回', save: '画像を保存', toTitle: 'タイトル', saved: '画像を保存しました', shared: '共有しました',
+    cardHead: '稟 議 書', cardNo: '本日の決裁報告', cardStamps: '本日押したハンコ', cardFoot: 'tom3games.github.io/hanko-hell',
+    times: '{n}回',
+  },
+  en: {
+    title: 'STAMP HELL', titleHtml: 'STAMP<b>HELL</b>', sub: '45 seconds to quitting time. Stamp everything.',
+    lead: 'Clear every form before quitting time. ...Just don\'t stamp my face.', boss: 'The Boss',
+    start: 'Clock In', how: 'How to Play', back: 'Back', lang: 'JP',
+    howT: 'How to Play',
+    howPc: ['When a form\'s <b>red box</b> reaches the <b>red line</b>, press <kbd>Click</kbd> or <kbd>Space</kbd>',
+      'Dead on the line = Straight. Press <b>a hair late</b> and the stamp leans toward your bosses\' boxes: the <b>Bowing Stamp</b>, worth more',
+      'Too early = Arrogant Stamp. Let forms pass and the <b>pending pile</b> grows until it falls',
+      'If it is not a form, <b>do not stamp it</b>. Disaster follows'],
+    howSp: ['When a form\'s <b>red box</b> reaches the <b>red line</b>, <b>tap anywhere</b>',
+      'Dead on the line = Straight. Tap <b>a hair late</b> and the stamp leans toward your bosses\' boxes: the <b>Bowing Stamp</b>, worth more',
+      'Too early = Arrogant Stamp. Let forms pass and the <b>pending pile</b> grows until it falls',
+      'If it is not a form, <b>do not stamp it</b>. Disaster follows'],
+    ngT: 'Do Not Stamp',
+    tutPc: 'Click / Space when the red box hits the line', tutSp: 'Tap when the red box hits the line', tutNow: 'NOW!',
+    count: ['3', '2', '1', 'GO!'], rush: 'QUITTING TIME RUSH!', bell: 'QUITTING TIME!', rushSub: '10 seconds left',
+    hudDone: 'Done', hudScore: 'Score', combo: '{n} combo', clockLab: 'Until 5 PM',
+    j: { straight: 'Straight', bow: 'Bowing Stamp', fun: 'Arrogant Stamp', off: 'Sloppy', air: 'Air Stamp', pass: 'Pending...', skip: 'Skipped' },
+    collapse: 'The pile collapsed!', bossMada: ['Not done yet!?', 'Well!?', 'Too slow!', 'Before five, please', 'HURRY!!'],
+    bossCollapse: 'WHAT ARE YOU DOING!!', bossBow: 'Good. You get it.', bossIdle: '...',
+    resHead: 'End of the Workday', resDone: 'Forms approved today', resScore: 'Score', resUnit: '', resGrade: 'Stamp Artisan',
+    resNg: 'Things you stamped', resNgNone: 'None (well done)', resMore: '+{n} more', resBows: 'Bows', resMax: 'Best combo', resPile: 'Piles fallen',
+    again: 'Again', save: 'Save Image', toTitle: 'Title', saved: 'Image saved', shared: 'Shared',
+    cardHead: 'APPROVAL FORM', cardNo: 'Daily Approval Report', cardStamps: 'Stamps pressed today', cardFoot: 'tom3games.github.io/hanko-hell',
+    times: 'x{n}',
+  },
+}
+
+// 書類の件名（中身は日替わりで流れてくる）
+const DOC_TITLES = {
+  ja: ['会議のための会議の開催', 'ハンコ削減計画の承認', 'コピー用紙1束の購入', 'FAX機の延命措置', '稟議書の書式変更の稟議', '課長の誕生日ケーキ代', '社内運動会の雨天対策', 'ボールペン（黒）1本'],
+  en: ['Meeting about meetings', 'Plan to reduce stamps', 'One ream of paper', 'Keep the fax alive', 'Form to change this form', 'Boss birthday cake', 'Sports day rain plan', 'One black ballpen'],
+}
+
+// 押してはいけない物。hw は当たり判定の半幅（ワールド単位）
+const NG = [
+  { id: 'cat', hw: 0.85, ja: '昼寝中の猫', en: 'A napping cat',
+    bja: '猫に押印！！', ben: 'YOU STAMPED THE CAT!', sja: 'ニ゛ャーーーッ！', sen: 'MRRRAAAOW!',
+    lja: '猫の背中に「決裁」。猫は会社を辞めた', len: 'The cat is now officially approved. It quit.',
+    boss: 'angry', mja: 'ネコに八つ当たりするな！', men: 'Leave the cat out of this!' },
+  { id: 'photo', hw: 0.7, ja: '課長の顔写真', en: 'The boss\'s portrait',
+    bja: '課長の顔に押印！！', ben: 'STAMPED THE BOSS\'S FACE!', sja: 'おでこに「決裁」', sen: '"APPROVED" on his forehead',
+    lja: '課長のおでこに「決裁」。額縁ごと没収された', len: 'The boss now has "APPROVED" on his forehead.',
+    boss: 'angry', mja: 'わしの顔に押したな！！', men: 'You stamped MY FACE!!' },
+  { id: 'lottery', hw: 0.7, ja: '宝くじの当たり券', en: 'A winning lottery ticket',
+    bja: '当たり券に押印！！', ben: 'STAMPED THE JACKPOT!', sja: '「無効」になりました', sen: 'It is now VOID',
+    lja: '1等の当たり券に押印。無効になった', len: 'Stamped a winning ticket. Now void.',
+    boss: 'shock', mja: 'それ、わしの……', men: 'That was... mine...' },
+  { id: 'resign', hw: 0.7, ja: '退職届（自分の）', en: 'Your own resignation',
+    bja: '自分の退職届を承認！', ben: 'APPROVED YOUR OWN RESIGNATION!', sja: '明日から来なくていいぞ', sen: 'Don\'t come in tomorrow',
+    lja: '自分の退職届を自分で決裁。受理された', len: 'Approved your own resignation. Accepted.',
+    boss: 'happy', mja: '受理した！明日から来なくていいぞ！', men: 'Accepted! See you never!' },
+  { id: 'love', hw: 0.7, ja: 'ラブレター', en: 'A love letter',
+    bja: 'ラブレターを決裁！', ben: 'APPROVED A LOVE LETTER!', sja: '告白、承認されました', sen: 'Confession: approved',
+    lja: '課長あてのラブレターを決裁。課長が照れた', len: 'Approved a love letter to the boss. He blushed.',
+    boss: 'blush', mja: 'わ、わしに……？', men: 'F-for me...?' },
+  { id: 'cake', hw: 0.65, ja: '課長のショートケーキ', en: 'The boss\'s cake',
+    bja: 'ケーキに押印！！', ben: 'STAMPED THE CAKE!', sja: 'グシャッ', sen: 'SPLAT',
+    lja: '課長のおやつのケーキを押しつぶした', len: 'Flattened the boss\'s afternoon cake.',
+    boss: 'cry', mja: 'わしの、おやつ……', men: 'My... snack...' },
+]
+
+// 級（得点の下限）。称号と課長のひとこと
+const GRADES = [
+  { min: -1e9, ja: '十級', en: 'Rank 10', nja: '朱肉をつけ忘れた人', nen: 'Forgot the ink pad' },
+  { min: 300, ja: '九級', en: 'Rank 9', nja: 'ハンコを持った置物', nen: 'A statue holding a stamp' },
+  { min: 900, ja: '八級', en: 'Rank 8', nja: '見習い押印係', nen: 'Stamping intern' },
+  { min: 1600, ja: '七級', en: 'Rank 7', nja: '定時の申し子', nen: 'Child of 5 PM' },
+  { min: 2400, ja: '六級', en: 'Rank 6', nja: '押印界の新人王', nen: 'Rookie of the stamp' },
+  { min: 3200, ja: '五級', en: 'Rank 5', nja: '中堅シャチク', nen: 'Mid-level office drone' },
+  { min: 4100, ja: '四級', en: 'Rank 4', nja: '朱肉ソムリエ', nen: 'Ink pad sommelier' },
+  { min: 5100, ja: '三級', en: 'Rank 3', nja: 'お辞儀の名手', nen: 'Master of the bow' },
+  { min: 6200, ja: '二級', en: 'Rank 2', nja: '決裁マシーン', nen: 'Approval machine' },
+  { min: 7400, ja: '一級', en: 'Rank 1', nja: '人間スタンプ台', nen: 'Human stamp pad' },
+  { min: 8700, ja: '初段', en: '1st Dan', nja: '稟議書の鬼', nen: 'Demon of paperwork' },
+  { min: 10000, ja: '名人', en: 'Grandmaster', nja: 'ハンコ界の生き神', nen: 'Living god of stamps' },
+]
+const BOSS_COMMENT = {
+  ja: [
+    [0, 'きみ、今日なにしてた？'],
+    [2, '明日は早く来なさい。朝6時だ'],
+    [4, 'まあ……人並みだな。人並みが一番むずかしい'],
+    [6, 'なかなかやるじゃないか。わしの若い頃みたいだ'],
+    [8, '速いし正確だ。昇進を考えておく'],
+    [10, '……もうハンコ、きみが全部押してくれ。わしは帰る'],
+  ],
+  en: [
+    [0, 'What exactly did you do today?'],
+    [2, 'Come in early tomorrow. 6 AM.'],
+    [4, 'Average. And average is the hardest thing.'],
+    [6, 'Not bad. You remind me of young me.'],
+    [8, 'Fast and precise. I\'ll think about a promotion.'],
+    [10, '...You do all the stamping from now on. I\'m going home.'],
+  ],
+}
+const BOSS_SPECIAL = {
+  zero: { ja: '……寝てた？', en: '...Were you asleep?' },
+  resign: { ja: '退職届、受理しといたぞ。おつかれさん', en: 'Your resignation is accepted. Bye now.' },
+  many: { ja: 'きみは書類以外に押す才能があるな', en: 'You have a gift for stamping everything but forms.' },
+}

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>稟議書ハンコ地獄</title>
+<meta name="description" content="流れてくる書類に、ハンコを押して押して押しまくれ。押しちゃダメなものもある。定時まで45秒のブラウザゲーム。">
+<meta name="theme-color" content="#22324a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="稟議書ハンコ地獄">
+<meta property="og:description" content="流れてくる書類に、ハンコを押して押して押しまくれ。押しちゃダメなものもある。">
+<meta property="og:image" content="https://tom3games.github.io/hanko-hell/og.png?v=1">
+<meta property="og:url" content="https://tom3games.github.io/hanko-hell/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='27' fill='%23fbf6ea' stroke='%23d6332b' stroke-width='6'/%3E%3Cpath d='M22 22h20M32 22v24M22 34h20' stroke='%23d6332b' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+<style>
+[hidden]{display:none!important}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1e1a17;--paper:#fbf6ea;--paper-dk:#d9ccb0;--red:#d6332b;--red-dk:#8f1d17;--navy:#22324a;--navy-dk:#121c2b;--gold:#f2c14e;--gold-dk:#a07b1c;
+  --disp:'Dela Gothic One','Hiragino Sans',sans-serif;
+}
+html{background:var(--navy);touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{height:100%;color:var(--paper);font-family:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Hiragino Sans','Yu Gothic',sans-serif;-webkit-tap-highlight-color:transparent;word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere}
+body{overflow:hidden;background:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button,canvas{touch-action:manipulation}
+button{font-family:inherit;color:inherit;font-size:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+#world{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+#fx{position:fixed;inset:0;z-index:15;pointer-events:none;overflow:hidden}
+
+.view{position:fixed;inset:0;z-index:10;height:100svh;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:max(60px,calc(env(safe-area-inset-top) + 54px)) 16px max(18px,calc(env(safe-area-inset-bottom) + 12px));gap:12px}
+.wrap{width:min(520px,100%);display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.6vh,14px);min-height:0;max-height:100%}
+.view:not([hidden]) .wrap{animation:enter .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;font-size:18px;letter-spacing:.05em;border:0;border-radius:14px;min-height:54px;padding:0 20px;cursor:pointer;width:100%;
+  background:var(--paper);color:var(--ink);box-shadow:0 5px 0 var(--paper-dk),0 10px 18px rgba(0,0,0,.25);transition:transform .07s,box-shadow .07s,filter .15s}
+.btn::before{content:"";position:absolute;left:8px;right:8px;top:4px;height:42%;border-radius:10px 10px 40% 40%/10px 10px 14px 14px;background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,0));pointer-events:none}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--paper-dk),0 3px 8px rgba(0,0,0,.25)}
+@media (hover:hover){.btn:hover{filter:brightness(1.07)}}
+.btn svg{width:24px;height:24px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btn.red{background:linear-gradient(#e8503f,var(--red));color:#fff;box-shadow:0 6px 0 var(--red-dk),0 12px 22px rgba(214,51,43,.35);font-size:21px;min-height:62px}
+.btn.red:active{box-shadow:0 1px 0 var(--red-dk)}
+.btn.gold{background:linear-gradient(#ffd877,var(--gold));color:var(--ink);box-shadow:0 6px 0 var(--gold-dk),0 12px 22px rgba(0,0,0,.25)}
+.btn.gold:active{box-shadow:0 1px 0 var(--gold-dk)}
+.btn.ghost{background:rgba(18,28,43,.62);color:var(--paper);box-shadow:inset 0 0 0 2px rgba(251,246,234,.4);font-size:16px;min-height:48px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.btn.ghost::before{display:none}
+.btn.ghost:active{transform:translateY(2px)}
+.row{display:flex;gap:10px;width:100%}
+.row>.btn{flex:1;min-width:0}
+
+#corner{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:50;display:flex;gap:8px}
+#corner button{height:40px;min-width:44px;padding:0 12px;border-radius:12px;border:0;background:rgba(18,28,43,.72);box-shadow:inset 0 0 0 2px rgba(251,246,234,.3);font-weight:900;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#corner svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- タイトル */
+#vTitle{justify-content:space-between}
+.logo{position:relative;text-align:center;line-height:1;background:var(--paper);color:var(--ink);padding:16px 20px 14px;border-radius:6px;box-shadow:0 6px 0 var(--paper-dk),0 14px 30px rgba(0,0,0,.35);transform:rotate(-2deg);width:min(460px,100%)}
+.logo::before{content:"";position:absolute;inset:7px;border:2px solid var(--red);border-radius:3px;pointer-events:none;opacity:.55}
+.logo .main{font-family:var(--disp);font-weight:400;font-size:min(10.5vw,6.4vh,54px);letter-spacing:.02em;display:block}
+.logo .main b{display:block;color:var(--red);font-weight:400;font-size:1.22em;margin-top:4px;white-space:nowrap}
+.logo .sub{display:block;margin-top:10px;font-weight:900;font-size:clamp(12px,3.6vw,15px);color:#5a4c3c}
+.logo .seal{position:absolute;right:-10px;top:-14px;width:min(74px,15vw);height:min(74px,15vw);transform:rotate(14deg)}
+.bossLine{display:flex;gap:10px;align-items:flex-end;width:100%}
+.bossLine .bf{flex:none;width:54px;height:54px}
+.bf svg{width:100%;height:100%;display:block}
+.bubble{position:relative;background:var(--paper);color:var(--ink);border-radius:16px;padding:10px 14px;font-weight:700;font-size:15px;line-height:1.55;box-shadow:0 4px 0 var(--paper-dk);flex:1;min-width:0}
+.bubble small{display:block;font-size:12px;color:var(--red-dk);font-weight:900;margin-bottom:1px}
+.bubble::before{content:"";position:absolute;left:-8px;bottom:14px;border:8px solid transparent;border-right-color:var(--paper);border-left:0}
+.tBottom{width:min(520px,100%);display:flex;flex-direction:column;gap:10px}
+
+/* ---------- 遊び方 */
+#vHow{justify-content:center}
+.panel{width:100%;background:rgba(18,28,43,.86);border-radius:18px;padding:16px;box-shadow:inset 0 0 0 2px rgba(251,246,234,.18);min-height:0;overflow:hidden}
+.panel h2{font-family:var(--disp);font-weight:400;font-size:24px;color:var(--gold);margin-bottom:8px}
+.panel ol{padding-left:1.3em;display:flex;flex-direction:column;gap:clamp(3px,.9vh,8px);line-height:1.55;font-weight:700;font-size:clamp(12px,1.85vh,15px)}
+.panel ol b{color:#ffb4a6}
+kbd{font-family:inherit;font-weight:900;font-size:.9em;background:var(--paper);color:var(--ink);border-radius:5px;padding:0 6px;box-shadow:0 2px 0 var(--paper-dk)}
+.panel h3{font-size:14px;font-weight:900;margin:12px 0 6px;color:var(--gold)}
+.nglist{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.nglist div{text-align:center;font-size:10.5px;font-weight:900;line-height:1.25}
+.ic{display:block;width:100%;max-width:52px;aspect-ratio:1;margin:0 auto 3px;border-radius:12px;background:var(--paper);position:relative}
+.ic svg{width:100%;height:100%;display:block}
+.ic.x::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:3px solid var(--red);background:linear-gradient(45deg,transparent 46%,var(--red) 46%,var(--red) 54%,transparent 54%)}
+
+/* ---------- プレイ */
+#vPlay{padding:0;cursor:pointer;justify-content:flex-start}
+.hud{position:absolute;left:max(10px,env(safe-area-inset-left));right:max(62px,calc(env(safe-area-inset-right) + 56px));top:max(10px,env(safe-area-inset-top));display:flex;gap:8px;pointer-events:none;align-items:stretch}
+.hbox{background:rgba(251,246,234,.95);color:var(--ink);border-radius:12px;padding:4px 10px 5px;box-shadow:0 3px 0 var(--paper-dk);display:flex;flex-direction:column;justify-content:center;min-width:0}
+.hbox small{font-size:10px;font-weight:900;color:#7a6a58;line-height:1.2;white-space:nowrap}
+.hbox b{font-family:var(--disp);font-weight:400;font-size:22px;line-height:1.1;white-space:nowrap}
+.hclock{flex:none;position:relative;overflow:hidden}
+.hclock b{font-variant-numeric:tabular-nums;color:var(--navy)}
+.hclock.rush b{color:var(--red)}
+.hclock i{position:absolute;left:0;bottom:0;height:4px;background:var(--red);width:100%}
+.hscore{flex:0 1 150px}
+.hdone{flex:none}
+#combo{position:absolute;left:0;top:calc(100% + 8px);font-family:var(--disp);font-size:17px;color:var(--ink);background:var(--gold);padding:2px 14px 4px;border-radius:99px;box-shadow:0 3px 0 var(--gold-dk);pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
+#combo.on{opacity:1}
+#combo.bump{animation:cpop .25s ease-out}
+@keyframes cpop{from{transform:scale(1.5)}to{transform:scale(1)}}
+#tut{position:absolute;left:50%;bottom:max(18px,calc(env(safe-area-inset-bottom) + 12px));transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:rgba(18,28,43,.85);border-radius:99px;padding:8px 16px 8px 10px;font-weight:900;font-size:15px;white-space:nowrap;pointer-events:none;box-shadow:inset 0 0 0 2px rgba(251,246,234,.3)}
+#tut svg{width:34px;height:34px;flex:none}
+#tut.now{background:var(--red);animation:tnow .3s ease-in-out infinite alternate}
+@keyframes tnow{to{transform:translateX(-50%) scale(1.08)}}
+#count{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-family:var(--disp);font-size:min(28vw,26vh,170px);color:#fff;text-shadow:0 8px 0 var(--red-dk),0 0 30px rgba(0,0,0,.4);pointer-events:none;white-space:nowrap}
+#count.go{font-size:min(20vw,18vh,120px);color:var(--gold)}
+#count.anim{animation:cnt .9s ease-out both}
+@keyframes cnt{0%{transform:translate(-50%,-50%) scale(2);opacity:0}20%{transform:translate(-50%,-50%) scale(1);opacity:1}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}
+#banner{position:absolute;left:0;right:0;top:68%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none;padding:0 12px}
+#banner .b1{font-family:var(--disp);font-size:clamp(26px,8.4vw,60px);color:#fff;background:var(--red);padding:6px 18px 10px;transform:rotate(-4deg) skewX(-6deg);box-shadow:0 8px 0 var(--red-dk),0 0 0 4px #fff;text-align:center;line-height:1.15;max-width:100%}
+#banner .b2{margin-top:14px;font-weight:900;font-size:clamp(16px,4.6vw,26px);background:var(--paper);color:var(--ink);padding:4px 14px;border-radius:8px;transform:rotate(2deg);box-shadow:0 4px 0 var(--paper-dk);text-align:center;max-width:100%}
+#banner.on{animation:bIn .45s cubic-bezier(.3,1.6,.5,1) both}
+#banner.rush .b1{background:var(--gold);color:var(--ink);box-shadow:0 8px 0 var(--gold-dk),0 0 0 4px #fff}
+@keyframes bIn{from{transform:translateY(-50%) scale(2.4);opacity:0}to{transform:translateY(-50%) scale(1);opacity:1}}
+body.shake #world{animation:shake .35s linear}
+@keyframes shake{0%,100%{transform:none}20%{transform:translate(-9px,5px)}40%{transform:translate(8px,-6px)}60%{transform:translate(-6px,-3px)}80%{transform:translate(5px,4px)}}
+#flash{position:fixed;inset:0;z-index:14;background:#fff;opacity:0;pointer-events:none}
+#flash.on{animation:fl .35s ease-out}
+#flash.redf{background:var(--red)}
+@keyframes fl{from{opacity:.75}to{opacity:0}}
+
+/* 判定の吹き出し（3Dの位置に出す） */
+.pop{position:absolute;transform:translate(-50%,-100%);font-family:var(--disp);font-size:22px;white-space:nowrap;-webkit-text-stroke:6px #1e1a17;paint-order:stroke fill;animation:popUp .8s ease-out forwards;text-align:center;line-height:1.1}
+.pop small{display:block;font-family:'Zen Maru Gothic',sans-serif;font-weight:900;font-size:15px;-webkit-text-stroke:4px #1e1a17}
+.pop.bow{color:var(--gold);font-size:26px}.pop.straight{color:#fff}.pop.fun{color:#b9c6d6}.pop.off{color:#d9c8b2}.pop.bad{color:#ff7a6a}
+@keyframes popUp{0%{transform:translate(-50%,-60%) scale(.6);opacity:0}15%{transform:translate(-50%,-100%) scale(1.15);opacity:1}30%{transform:translate(-50%,-100%) scale(1)}100%{transform:translate(-50%,-190%);opacity:0}}
+.say{position:absolute;transform:translate(-50%,-100%);background:#fff;color:var(--ink);font-weight:900;font-size:17px;padding:8px 14px;border-radius:18px;border:3px solid var(--ink);white-space:nowrap;max-width:calc(100vw - 20px);overflow:hidden;text-overflow:ellipsis;box-shadow:4px 4px 0 rgba(0,0,0,.3);animation:sayIn .3s cubic-bezier(.3,1.6,.5,1) both}
+.say::after{content:"";position:absolute;left:50%;bottom:-13px;margin-left:-8px;border:9px solid transparent;border-top-color:var(--ink);border-bottom:0}
+.say.big{font-family:var(--disp);font-weight:400;font-size:clamp(17px,5.4vw,24px);background:#fff3a8}
+@keyframes sayIn{from{transform:translate(-50%,-100%) scale(.3)}to{transform:translate(-50%,-100%) scale(1)}}
+
+/* ---------- 結果 */
+#vResult{justify-content:center;background:radial-gradient(120% 90% at 50% 40%,rgba(18,28,43,.55),rgba(18,28,43,.9))}
+#vResult .wrap{gap:clamp(6px,1.2vh,12px)}
+.rhead{font-weight:900;font-size:14px;letter-spacing:.2em;color:#cfd8e3}
+.rsheet{width:100%;background:var(--paper);color:var(--ink);border-radius:6px;padding:14px 16px;box-shadow:0 6px 0 var(--paper-dk),0 16px 30px rgba(0,0,0,.4);display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;position:relative}
+.rsheet::before{content:"";position:absolute;inset:6px;border:2px solid rgba(214,51,43,.35);border-radius:3px;pointer-events:none}
+.rstat small{display:block;font-size:12px;font-weight:900;color:#7a6a58}
+.rstat .num{font-family:var(--disp);font-size:clamp(40px,12vw,64px);line-height:1;color:var(--ink)}
+.rstat .num u{text-decoration:none;font-size:.38em;margin-left:4px}
+.rstat .sc{font-weight:900;font-size:15px;margin-top:2px}
+.rstat .sc b{font-family:var(--disp);font-weight:400;font-size:20px;color:var(--red-dk)}
+.rstat .mini{font-size:12px;font-weight:700;color:#5a4c3c;margin-top:2px}
+.seal{width:clamp(96px,27vw,128px);aspect-ratio:1;border-radius:50%;border:6px solid var(--red);color:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transform:rotate(-12deg);opacity:0;position:relative;background:radial-gradient(circle,rgba(214,51,43,.06),rgba(214,51,43,0))}
+.seal::before{content:"";position:absolute;inset:4px;border-radius:50%;border:2px solid var(--red)}
+.seal small{font-size:11px;font-weight:900;line-height:1.1}
+.seal b{font-family:var(--disp);font-weight:400;font-size:clamp(26px,7.4vw,36px);line-height:1.1;white-space:nowrap}
+.seal.long b{font-size:clamp(16px,4.8vw,22px)}
+.seal.on{animation:sealIn .45s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes sealIn{from{transform:rotate(-12deg) scale(3);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:.92}}
+.nick{grid-column:1/-1;text-align:center;font-family:var(--disp);font-size:clamp(17px,5vw,22px);color:var(--red-dk);opacity:0;transition:opacity .3s}
+.nick.on{opacity:1}
+.ngbox{width:100%;background:rgba(18,28,43,.82);border-radius:14px;padding:8px 10px;box-shadow:inset 0 0 0 2px rgba(251,246,234,.16)}
+.ngbox h3{font-size:12px;font-weight:900;color:var(--gold);margin-bottom:4px}
+.ngrow{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:700;line-height:1.35;padding:2px 0}
+.ngrow .ic{width:30px;flex:none;margin:0;border-radius:8px}
+.ngrow b{color:#ffb4a6;font-weight:900;margin-right:4px}
+.ngnone{font-size:13px;font-weight:700;color:#cfd8e3}
+#rBoss{opacity:0;transition:opacity .3s}
+#rBoss.on{opacity:1}
+#rBtns{display:flex;flex-direction:column;gap:8px;width:100%}
+
+/* 小さい縦画面 */
+@media (max-height:700px) and (max-aspect-ratio:1/1){
+  .view{padding-top:max(56px,calc(env(safe-area-inset-top) + 50px))}
+  .bossLine .bf{width:42px;height:42px}
+  .bubble{font-size:13px;padding:8px 12px}
+  .btn.red{min-height:54px;font-size:19px}
+  .btn{min-height:46px}
+  .btn.ghost{min-height:42px}
+  .rsheet{padding:10px 14px}
+  .rstat .num{font-size:clamp(34px,10vw,48px)}
+  .seal{width:clamp(84px,24vw,104px)}
+  #vResult .bubble{font-size:12.5px;padding:6px 10px}
+  .ngrow{font-size:11.5px}
+  .ngrow .ic{width:24px}
+}
+/* 背の低い横画面: 2列 */
+@media (max-height:560px) and (min-aspect-ratio:1/1){
+  .view{padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+  #vTitle{flex-direction:row;align-items:center;justify-content:space-between;gap:20px}
+  #vTitle .logo{width:min(380px,44vw)}
+  #vTitle .logo .main{font-size:min(5vw,9vh,44px)}
+  #vTitle .tBottom{width:min(340px,40vw);padding-top:40px}
+  .bossLine .bf{width:40px;height:40px}
+  .bubble{font-size:12.5px;padding:7px 11px;line-height:1.45}
+  .btn.red{min-height:50px;font-size:18px}
+  .btn{min-height:44px}
+  .btn.ghost{min-height:40px;font-size:15px}
+  #vHow .wrap{width:min(860px,100%);padding-right:96px}
+  .panel{padding:10px 14px;display:grid;grid-template-columns:1fr 210px;gap:4px 16px}
+  .panel h2{grid-column:1/-1;font-size:18px;margin:0}
+  .panel ol{font-size:clamp(11px,2.9vh,13.5px);gap:2px}
+  .ngwrap h3{margin-top:0}
+  .nglist{grid-template-columns:repeat(3,1fr)}
+  .ic{max-width:40px}
+  #vResult .wrap{width:min(820px,100%);display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;align-items:center;padding-right:0}
+  #vResult .rhead{grid-column:1/-1;margin-right:100px}
+  .rsheet{grid-column:1;grid-row:2/4;padding:10px 14px}
+  #rBoss{grid-column:2;grid-row:2}
+  .ngbox{grid-column:2;grid-row:3}
+  #rBtns{grid-column:1/-1;flex-direction:row}
+  #rBtns .btn{min-height:44px;font-size:15px;white-space:nowrap;padding:0 10px;gap:6px}
+  #rBtns .btn.red{min-height:46px;font-size:17px}
+  .seal{width:clamp(80px,13vw,110px)}
+  .rstat .num{font-size:clamp(32px,6vw,52px)}
+  #vResult .bubble{font-size:12px;padding:6px 10px}
+  .ngrow{font-size:11.5px;padding:1px 0}
+  .ngrow .ic{width:22px}
+  #banner{top:70%}
+}
+@media (min-width:900px) and (min-height:561px){
+  #vResult .wrap{width:min(560px,100%)}
+}
+body.playing #bLang{display:none}
+#boot-err{position:fixed;inset:auto 8px 8px 8px;z-index:99;background:#fff;color:#b00;font:12px/1.4 monospace;white-space:pre-wrap;padding:10px;border-radius:8px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--paper);color:var(--ink);font-weight:900;padding:10px 18px;border-radius:99px;z-index:70;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+@media (prefers-reduced-motion:reduce){#tut.now,body.shake #world{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+<div id="flash"></div>
+<div id="fx"></div>
+
+<div id="corner">
+  <button id="bLang" type="button" aria-label="Language"><span id="langTxt">EN</span></button>
+  <button id="bMute" type="button" aria-label="Sound">
+    <svg id="icOn" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+    <svg id="icOff" viewBox="0 0 24 24" hidden><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+  </button>
+</div>
+
+<main id="vTitle" class="view">
+  <h1 class="logo"><span class="main" data-t="titleHtml"></span><span class="sub" data-t="sub"></span><svg class="seal" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="34" fill="none" stroke="#d6332b" stroke-width="5"/><circle cx="40" cy="40" r="28" fill="none" stroke="#d6332b" stroke-width="2"/><text x="40" y="51" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="30" fill="#d6332b">済</text></svg></h1>
+  <div class="tBottom">
+    <div class="bossLine"><div class="bf" data-face="normal"></div><div class="bubble"><small data-t="boss"></small><span data-t="lead"></span></div></div>
+    <button class="btn red" id="bStart" type="button"><svg viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="9" rx="2"/><path d="M5 15h14v3H5zM4 21h16"/></svg><span data-t="start"></span></button>
+    <button class="btn ghost" id="bHow" type="button" data-t="how"></button>
+  </div>
+</main>
+
+<main id="vHow" class="view" hidden>
+  <div class="wrap">
+    <div class="panel"><h2 data-t="howT"></h2><ol id="howList"></ol><div class="ngwrap"><h3 data-t="ngT"></h3><div class="nglist" id="ngList"></div></div></div>
+    <button class="btn" id="bHowBack" type="button" data-t="back"></button>
+  </div>
+</main>
+
+<main id="vPlay" class="view" hidden>
+  <div class="hud">
+    <div class="hbox hclock" id="hClock"><small data-t="clockLab"></small><b id="hTime">16:59:15</b><i id="hBar"></i></div>
+    <div class="hbox hdone"><small data-t="hudDone"></small><b id="hDone">0</b></div>
+    <div class="hbox hscore" id="hScoreBox"><small data-t="hudScore"></small><b id="hScore">0</b></div>
+    <div id="combo"></div>
+  </div>
+  <div id="count" hidden></div>
+  <div id="banner" hidden><div class="b1" id="bn1"></div><div class="b2" id="bn2"></div></div>
+  <div id="tut" hidden><svg viewBox="0 0 40 40"><path d="M16 30V12a3 3 0 0 1 6 0v9l7 1.5a3 3 0 0 1 2.4 3.4L30 35H18z" fill="#fbf6ea" stroke="#1e1a17" stroke-width="2" stroke-linejoin="round"/><circle cx="19" cy="7" r="4" fill="none" stroke="#f2c14e" stroke-width="2.5"/></svg><span id="tutTxt"></span></div>
+</main>
+
+<main id="vResult" class="view" hidden>
+  <div class="wrap">
+    <div class="rhead" data-t="resHead"></div>
+    <div class="rsheet">
+      <div class="rstat"><small data-t="resDone"></small><div class="num"><span id="rDone">0</span><u data-t="resUnit"></u></div>
+        <div class="sc"><span data-t="resScore"></span> <b id="rScore">0</b></div><div class="mini" id="rMini"></div></div>
+      <div class="seal" id="rSeal"><small data-t="resGrade"></small><b id="rGrade"></b></div>
+      <div class="nick" id="rNick"></div>
+    </div>
+    <div class="bossLine" id="rBoss"><div class="bf" id="rBossFace"></div><div class="bubble"><small data-t="boss"></small><span id="rBossTxt"></span></div></div>
+    <div class="ngbox"><h3 data-t="resNg"></h3><div id="rNg"></div></div>
+    <div id="rBtns">
+      <button class="btn red" id="bAgain" type="button"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg><span data-t="again"></span></button>
+      <div class="row"><button class="btn gold" id="bSave" type="button"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-t="save"></span></button><button class="btn ghost" id="bTitle" type="button" data-t="toTitle"></button></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ブラウザの拡大を止める（ピンチ・ダブルタップ・トラックパッドのピンチ・Ctrl+ホイール/キー）。iOS は user-scalable=no を無視するので JS でも止める
+(function(){
+  var opt={passive:false};
+  ['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},opt)});
+  document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault()},opt);
+  var last=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-last<300&&!(e.target.closest&&e.target.closest('button,a')))e.preventDefault();last=n},opt);
+  document.addEventListener('dblclick',function(e){e.preventDefault()},opt);
+  window.addEventListener('wheel',function(e){if(e.ctrlKey)e.preventDefault()},opt);
+  window.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&['+','-','=','0',';'].indexOf(e.key)>=0)e.preventDefault()});
+})();
+// 起動失敗の保険。5秒たって起動フラグが無ければ原因と UA を画面に出す
+(function(){
+  var errs=[];
+  window.addEventListener('error',function(e){errs.push((e.message||'error')+' @'+(e.filename||'')+':'+(e.lineno||''))});
+  window.addEventListener('unhandledrejection',function(e){errs.push('reject: '+(e.reason&&e.reason.message||e.reason))});
+  setTimeout(function(){
+    if(window.__hhReady) return;
+    var d=document.createElement('div');d.id='boot-err';
+    d.textContent='起動できませんでした / failed to start\n'+(errs.join('\n')||'(no error captured)')+'\n'+navigator.userAgent;
+    document.body.appendChild(d);
+  },5000);
+})();
+</script>
+<script src="data.js?v=1"></script>
+<script src="snd.js?v=1"></script>
+<script type="module" src="game.js?v=1"></script>
+</body>
+</html>
