@@ -1,5 +1,6 @@
 // SNS用サムネ og.png（1200x630）。node og.mjs
 // 遊んでいる一番おもしろい場面（昼寝中の猫に押してしまい、課長が激怒）＋タイトル＋一言
+import './mute-auto.mjs'  // テスト中は絶対に音を出さない（playwright を無音に差し替え）
 import { chromium } from 'playwright'
 import { spawn } from 'node:child_process'
 const ROOT = import.meta.dirname

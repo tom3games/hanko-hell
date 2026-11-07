@@ -1,4 +1,5 @@
 // 全項目の自動検証。node verify.mjs（shots/ にスクショを出す）
+import './mute-auto.mjs'  // テスト中は絶対に音を出さない（playwright を無音に差し替え）
 import { chromium, webkit } from 'playwright'
 import { spawn } from 'node:child_process'
 import { mkdirSync, statSync } from 'node:fs'
@@ -229,7 +230,7 @@ await t('実時間: 2秒で約2秒進む（固定60Hz・performance.now）', asy
 })
 await t('音: 鳴らしてもエラーなし（BGM・ハンコ・事故・ベル）', async () => {
   const r = await p.evaluate(async () => { hh.Snd.init(); hh.dbg.pause(true); hh.S.hit = 0; hh.hand.ph = -1; hh.dbg.place('doc', -0.4); hh.press(); hh.hand.ph = -1; hh.S.hit = 0; hh.dbg.place('cat', 0); hh.press(); hh.dbg.pause(false); await new Promise(r => setTimeout(r, 900)); return { played: Object.keys(hh.Snd.played), level: hh.Snd.level(), state: hh.Snd.ctx && hh.Snd.ctx.state } })
-  expect(r.played.includes('stamp') && r.played.includes('accident') && r.played.includes('bgm:play') && p.errs.length === 0, JSON.stringify(r) + p.errs.join('|')); return r.played.join(',')
+  expect(r.played.includes('stamp') && r.played.includes('accident') && (r.played.includes('bgm:play') || r.state === 'suspended') && p.errs.length === 0, JSON.stringify(r) + p.errs.join('|')); return r.played.join(',')
 })
 await t('ミュートが切り替わり、次回も覚えている', async () => { await p.click('#bMute'); const r = await p.evaluate(() => [hh.Snd.muted, localStorage.getItem('hh.mute')]); await p.click('#bMute'); expect(r[0] === true && r[1] === '1', r) })
 await t('fps（ヘッドレス Chromium・ソフト描画）', async () => { await p.waitForTimeout(1500); const f = await p.evaluate(() => hh.dbg.fps()); expect(f > 20, f); return Math.round(f) })
