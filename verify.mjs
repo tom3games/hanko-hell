@@ -100,7 +100,7 @@ await t('ブラウザの拡大が起きない（viewport・ピンチ・Ctrl+ホ�
 })
 await t('OGP 一式がある（画像は og.png?v=1・url はスラッグ）', async () => {
   const r = await p.evaluate(() => ({ m: ['og:title', 'og:description', 'og:image', 'og:url', 'og:type'].map(k => document.querySelector(`meta[property="${k}"]`)?.content), tw: document.querySelector('meta[name="twitter:card"]')?.content }))
-  expect(r.m.every(Boolean) && r.tw === 'summary_large_image' && r.m[2] === 'https://tom3games.github.io/hanko-hell/og.png?v=1' && r.m[3] === 'https://tom3games.github.io/hanko-hell/', JSON.stringify(r))
+  expect(r.m.every(Boolean) && r.tw === 'summary_large_image' && r.m[2] === 'https://tom3games.com/play/hanko-hell/og.png?v=1' && r.m[3] === 'https://tom3games.com/play/hanko-hell/', JSON.stringify(r))
 })
 await t('og.png が 1200x630 で置いてある', async () => { const st = statSync(ROOT + '/og.png'); const r = await p.evaluate(async () => { const im = new Image(); im.src = 'og.png'; await im.decode(); return [im.naturalWidth, im.naturalHeight] }); expect(r[0] === 1200 && r[1] === 630, r); return { kb: Math.round(st.size / 1024) } })
 await t('タイトルが日本語で出ている', async () => { const s = await p.textContent('.logo .main'); expect(s.includes('ハンコ地獄'), s); return s })
